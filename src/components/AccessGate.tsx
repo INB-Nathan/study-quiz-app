@@ -31,7 +31,9 @@ export default function AccessGate({ children }: AccessGateProps) {
         body: JSON.stringify({ key })
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (data.valid) {
         sessionStorage.setItem('study_access_key', key);
         setIsAuthenticated(true);
       } else {
@@ -49,9 +51,9 @@ export default function AccessGate({ children }: AccessGateProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Study Quiz</h1>
             <p className="text-gray-400">Enter your access key to begin</p>
@@ -64,7 +66,7 @@ export default function AccessGate({ children }: AccessGateProps) {
                 value={key}
                 onChange={(e) => setKey(e.target.value)}
                 placeholder="Access Key"
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-lg tracking-widest"
+                className="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#22d3ee] focus:border-transparent text-center text-lg tracking-widest"
                 autoFocus
               />
             </div>
@@ -76,7 +78,7 @@ export default function AccessGate({ children }: AccessGateProps) {
             <button
               type="submit"
               disabled={loading || !key.trim()}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors"
+              className="w-full min-h-[44px] min-w-[44px] py-3 px-4 bg-[#22d3ee] hover:bg-[#06b6d4] disabled:bg-gray-700 disabled:cursor-not-allowed text-[#0f0f0f] font-semibold rounded-xl transition-colors"
             >
               {loading ? 'Verifying...' : 'Continue'}
             </button>
