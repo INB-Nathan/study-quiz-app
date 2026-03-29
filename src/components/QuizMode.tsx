@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getProgress, saveProgress, saveHighScore, getHighScores } from '@/lib/storage';
+import {
+  getProgress, saveProgress,
+  addWrongAnswer, removeWrongAnswer,
+  recordStudySession,
+  saveLastSession,
+} from '@/lib/storage';
 
 interface Question {
   id: number;
@@ -29,18 +34,38 @@ export default function QuizMode({ questions }: QuizModeProps) {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [answered, setAnswered] = useState(false);
   const [prefersReduced, setPrefersReduced] = useState(false);
+  const [sessionScore, setSessionScore] = useState(0);
+  const [sessionDone, setSessionDone] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReduced(mq.matches);
   }, []);
 
+  // Mid-session reset: when topic changes (questions prop changes), reset all state
+  useEffect(() => {
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setFeedback(null);
+    setScore(0);
+    setSessionScore(0);
+    setAnswered(false);
+    setSessionDone(false);
+  }, [questions]);
+
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
-  const optionLabels = Object.keys(currentQuestion.options);
+  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const optionLabels = Object.keys(currentQuestion?.options ?? {});
+
+  // Save last session on every question change
+  useEffect(() => {
+    if (!answered && !sessionDone && currentQuestion) {
+      saveLastSession(currentQuestion.id, currentQuestion.topic);
+    }
+  }, [currentIndex, currentQuestion, answered, sessionDone]);
 
   const handleAnswer = async (answer: string) => {
-    if (answered) return;
+    if (answered || sessionDone || !currentQuestion) return;
 
     setSelectedAnswer(answer);
     setAnswered(true);
@@ -55,19 +80,23 @@ export default function QuizMode({ questions }: QuizModeProps) {
       setFeedback(data);
 
       if (data.correct) {
-        setScore((s) => {
-          const next = s + 1;
-          // Update high score for this topic
-          const hs = getHighScores();
-          const topic = currentQuestion.topic;
-          if (next > (hs[topic] || 0)) {
-            saveHighScore(topic, next);
-          }
-          return next;
-        });
+        setScore((s) => s + 1);
+        setSessionScore((s) => s + 1);
+        removeWrongAnswer(currentQuestion.id);
+      } else {
+        if (!isReviewMode) {
+          addWrongAnswer({
+            questionId: currentQuestion.id,
+            topic: currentQuestion.topic,
+            question: currentQuestion.question,
+            selectedAnswer: answer,
+            correctAnswer: currentQuestion.correctAnswer,
+            explanation: currentQuestion.explanation || '',
+            timestamp: Date.now(),
+          });
+        }
       }
 
-      // Mark completed in progress
       const prog = getProgress();
       if (!prog.completedQuestions.includes(String(currentQuestion.id))) {
         saveProgress({
@@ -76,15 +105,21 @@ export default function QuizMode({ questions }: QuizModeProps) {
         });
       }
     } catch {
-      // Network error — fail gracefully
+      // Network error — fail silently
     }
   };
 
   const handleNext = () => {
-    setCurrentIndex((i) => i + 1);
-    setSelectedAnswer(null);
-    setFeedback(null);
-    setAnswered(false);
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((i) => i + 1);
+      setSelectedAnswer(null);
+      setFeedback(null);
+      setAnswered(false);
+    } else {
+      recordStudySession(currentQuestion.topic, sessionScore, questions.length);
+      setSessionScore(0);
+      setSessionDone(true);
+    }
   };
 
   const handlePrev = () => {
@@ -101,15 +136,31 @@ export default function QuizMode({ questions }: QuizModeProps) {
     setSelectedAnswer(null);
     setFeedback(null);
     setScore(0);
+    setSessionScore(0);
     setAnswered(false);
+    setSessionDone(false);
   };
 
   const isCorrect = feedback?.correct === true;
   const isWrong = answered && feedback?.correct === false;
 
+  // Empty state
+  if (questions.length === 0) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 text-lg leading-relaxed">
+            No questions in this topic.
+          </p>
+          <p className="text-gray-500 text-sm mt-2">Pick another topic above.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
-      {/* Sticky progress bar */}
+      {/* Progress bar */}
       <div className="mb-6">
         <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
           <motion.div
@@ -138,9 +189,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
       {/* Score + topic */}
       <div className="flex justify-between items-start mb-6">
         <span className="text-white/50 text-xs">{currentQuestion.topic}</span>
-        <span className="text-white/30 text-xs">
-          Score: {score}
-        </span>
+        <span className="text-white/30 text-xs">Score: {score}</span>
       </div>
 
       {/* Question card */}
@@ -153,13 +202,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
             ? { scale: [1, 1.02, 1] }
             : {}
         }
-        transition={
-          isWrong
-            ? { duration: 0.4 }
-            : isCorrect
-            ? { duration: 0.5 }
-            : {}
-        }
+        transition={isWrong ? { duration: 0.4 } : isCorrect ? { duration: 0.5 } : {}}
       >
         <p className="text-gray-100 text-xl font-bold leading-relaxed">
           {currentQuestion.question}
@@ -179,7 +222,6 @@ export default function QuizMode({ questions }: QuizModeProps) {
 
             if (feedback) {
               if (label === currentQuestion.correctAnswer) {
-                // Always highlight correct answer in bright green
                 bgClass = 'bg-green-600 border-green-400';
                 textClass = 'text-white';
                 disabled = true;
@@ -198,15 +240,15 @@ export default function QuizMode({ questions }: QuizModeProps) {
               <motion.button
                 key={label}
                 onClick={() => handleAnswer(label)}
-                disabled={answered || disabled}
+                disabled={answered || sessionDone}
                 className={`
                   w-full min-h-12 rounded-xl border-2 text-left
                   flex items-center gap-3 px-4 py-3
                   transition-colors active:scale-95
                   ${bgClass} ${textClass}
-                  ${!answered ? 'hover:border-[#22d3ee] cursor-pointer' : 'cursor-default'}
+                  ${!answered && !sessionDone ? 'hover:border-[#22d3ee] cursor-pointer' : 'cursor-default'}
                 `}
-                whileTap={!answered && !prefersReduced ? { scale: 0.97 } : {}}
+                whileTap={!answered && !sessionDone && !prefersReduced ? { scale: 0.97 } : {}}
                 initial={false}
                 animate={
                   isCorrect && label === selectedAnswer && !prefersReduced
@@ -228,9 +270,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
         {feedback && (
           <motion.div
             className={`rounded-2xl p-4 mb-6 border ${
-              isCorrect
-                ? 'bg-green-900/30 border-green-700'
-                : 'bg-red-900/30 border-red-700'
+              isCorrect ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'
             }`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -240,8 +280,22 @@ export default function QuizMode({ questions }: QuizModeProps) {
             <p className={`font-bold text-sm ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
               {isCorrect ? '✓ Correct!' : '✗ Incorrect'}
             </p>
-            <p className="text-gray-300 mt-1 text-sm leading-relaxed">
-              {feedback.explanation}
+            <p className="text-gray-300 mt-1 text-sm leading-relaxed">{feedback.explanation}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Session done */}
+      <AnimatePresence>
+        {sessionDone && (
+          <motion.div
+            className="rounded-2xl p-6 mb-6 border border-[#22d3ee] bg-[#1a1a1a]"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <p className="text-[#22d3ee] font-bold text-lg text-center mb-2">Quiz Complete!</p>
+            <p className="text-white/60 text-center text-sm">
+              {score} / {questions.length} correct
             </p>
           </motion.div>
         )}
@@ -251,13 +305,13 @@ export default function QuizMode({ questions }: QuizModeProps) {
       <div className="flex gap-3">
         <button
           onClick={handlePrev}
-          disabled={currentIndex === 0}
+          disabled={currentIndex === 0 || sessionDone}
           className="min-h-12 px-6 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white/70 active:scale-95 transition-transform text-sm disabled:opacity-30 disabled:cursor-not-allowed"
         >
           ← Prev
         </button>
 
-        {currentIndex === questions.length - 1 && answered ? (
+        {sessionDone ? (
           <button
             onClick={handleRestart}
             className="flex-1 min-h-12 bg-[#a855f7] text-white rounded-xl font-bold active:scale-95 transition-transform text-sm"
@@ -269,7 +323,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
             onClick={handleNext}
             className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
           >
-            Next →
+            {currentIndex === questions.length - 1 ? 'Finish' : 'Next →'}
           </button>
         ) : (
           <div className="flex-1 min-h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center text-white/30 text-sm">
