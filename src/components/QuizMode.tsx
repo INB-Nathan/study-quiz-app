@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   getProgress, saveProgress,
-  getHighScores, saveHighScore,
   addWrongAnswer, removeWrongAnswer,
   recordStudySession,
   saveLastSession,
@@ -43,19 +42,30 @@ export default function QuizMode({ questions }: QuizModeProps) {
     setPrefersReduced(mq.matches);
   }, []);
 
+  // Mid-session reset: when topic changes (questions prop changes), reset all state
+  useEffect(() => {
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setFeedback(null);
+    setScore(0);
+    setSessionScore(0);
+    setAnswered(false);
+    setSessionDone(false);
+  }, [questions]);
+
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
-  const optionLabels = Object.keys(currentQuestion.options);
+  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  const optionLabels = Object.keys(currentQuestion?.options ?? {});
 
   // Save last session on every question change
   useEffect(() => {
-    if (!answered && !sessionDone) {
+    if (!answered && !sessionDone && currentQuestion) {
       saveLastSession(currentQuestion.id, currentQuestion.topic);
     }
-  }, [currentIndex, currentQuestion.id, currentQuestion.topic, answered, sessionDone]);
+  }, [currentIndex, currentQuestion, answered, sessionDone]);
 
   const handleAnswer = async (answer: string) => {
-    if (answered || sessionDone) return;
+    if (answered || sessionDone || !currentQuestion) return;
 
     setSelectedAnswer(answer);
     setAnswered(true);
@@ -72,10 +82,8 @@ export default function QuizMode({ questions }: QuizModeProps) {
       if (data.correct) {
         setScore((s) => s + 1);
         setSessionScore((s) => s + 1);
-        // Remove from wrong answers if previously wrong
         removeWrongAnswer(currentQuestion.id);
       } else {
-        // Record wrong answer (unless review mode)
         if (!isReviewMode) {
           addWrongAnswer({
             questionId: currentQuestion.id,
@@ -89,7 +97,6 @@ export default function QuizMode({ questions }: QuizModeProps) {
         }
       }
 
-      // Update progress
       const prog = getProgress();
       if (!prog.completedQuestions.includes(String(currentQuestion.id))) {
         saveProgress({
@@ -109,7 +116,6 @@ export default function QuizMode({ questions }: QuizModeProps) {
       setFeedback(null);
       setAnswered(false);
     } else {
-      // Quiz complete — record streak
       recordStudySession(currentQuestion.topic, sessionScore, questions.length);
       setSessionScore(0);
       setSessionDone(true);
@@ -137,6 +143,20 @@ export default function QuizMode({ questions }: QuizModeProps) {
 
   const isCorrect = feedback?.correct === true;
   const isWrong = answered && feedback?.correct === false;
+
+  // Empty state
+  if (questions.length === 0) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 text-lg leading-relaxed">
+            No questions in this topic.
+          </p>
+          <p className="text-gray-500 text-sm mt-2">Pick another topic above.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-8">

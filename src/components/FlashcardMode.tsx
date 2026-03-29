@@ -32,15 +32,20 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
     setPrefersReduced(mq.matches);
   }, []);
 
+  // Mid-session reset when topic changes
+  useEffect(() => {
+    setCurrentIndex(0);
+    setIsRevealed(false);
+  }, [questions]);
+
   const currentQuestion = questions[currentIndex];
-  const progress = ((currentIndex + 1) / questions.length) * 100;
+  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
 
   const markAsSeen = (id: number) => {
     const newSeen = new Set(seenIds);
     newSeen.add(id);
     setSeenIds(newSeen);
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...newSeen]));
-    // Sync to shared progress store
     const prog = getProgress();
     if (!prog.completedQuestions.includes(String(id))) {
       saveProgress({
@@ -51,7 +56,7 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
   };
 
   const handleNext = () => {
-    markAsSeen(currentQuestion.id);
+    if (currentQuestion) markAsSeen(currentQuestion.id);
     setIsRevealed(false);
     setCurrentIndex((i) => (i < questions.length - 1 ? i + 1 : 0));
   };
@@ -62,19 +67,27 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
   };
 
   const handleReveal = () => {
+    if (currentQuestion) markAsSeen(currentQuestion.id);
     setIsRevealed(true);
-    markAsSeen(currentQuestion.id);
   };
 
-  // 3D flip: front shows question, back shows answer
-  const cardVariants = {
-    flip: { rotateY: prefersReduced ? 0 : 180 },
-    unflip: { rotateY: 0 },
-  };
+  // Empty state
+  if (questions.length === 0) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 text-lg leading-relaxed">
+            No flashcards in this topic.
+          </p>
+          <p className="text-gray-500 text-sm mt-2">Pick another topic above.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
-      {/* Progress bar — always visible */}
+      {/* Progress bar */}
       <div className="mb-6">
         <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
           <motion.div
@@ -97,7 +110,10 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
           className="relative w-full min-h-64 cursor-pointer"
           onClick={!isRevealed ? handleReveal : undefined}
           animate={isRevealed ? 'flip' : 'unflip'}
-          variants={cardVariants}
+          variants={{
+            flip: { rotateY: prefersReduced ? 0 : 180 },
+            unflip: { rotateY: 0 },
+          }}
           transition={{ duration: prefersReduced ? 0 : 0.5, ease: 'easeInOut' }}
           style={{ transformStyle: 'preserve-3d' }}
         >

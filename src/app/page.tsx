@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import QuizMode from '@/components/QuizMode';
 import FlashcardMode from '@/components/FlashcardMode';
 import WrongAnswersMode from '@/components/WrongAnswersMode';
@@ -19,6 +19,7 @@ interface Question {
 }
 
 const TOPICS = ['System Integ SA1', 'System Integ SA2', 'System Integ SA3', 'System Integ SA4'];
+const TOPIC_STORAGE_KEY = 'study_selected_topic';
 
 export default function Home() {
   const [view, setView] = useState<View>('quiz');
@@ -27,13 +28,22 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
-
-  // Resume session
+  const [selectedTopic, setSelectedTopic] = useState<string>('All');
   const [lastSession, setLastSession] = useState<{ questionId: number; topic: string } | null>(null);
-  const [resumeLoading, setResumeLoading] = useState(false);
-
-  // Streak
   const [streaks, setStreaks] = useState<Record<string, number>>({});
+
+  // Hydrate selectedTopic from localStorage (client-only)
+  useEffect(() => {
+    const stored = localStorage.getItem(TOPIC_STORAGE_KEY);
+    if (stored && (stored === 'All' || TOPICS.includes(stored))) {
+      setSelectedTopic(stored);
+    }
+  }, []);
+
+  // Persist selectedTopic to localStorage
+  useEffect(() => {
+    localStorage.setItem(TOPIC_STORAGE_KEY, selectedTopic);
+  }, [selectedTopic]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('study_access_key');
@@ -44,16 +54,12 @@ export default function Home() {
       .then((data) => setQuestions(data))
       .catch(() => {});
 
-    // Load last session
     const ls = getLastSession();
     if (ls) setLastSession(ls);
 
-    // Load streaks
     const s = getStreaks();
     const active: Record<string, number> = {};
-    TOPICS.forEach((t) => {
-      active[t] = getStreak(t);
-    });
+    TOPICS.forEach((t) => { active[t] = getStreak(t); });
     setStreaks(active);
   }, []);
 
@@ -81,12 +87,23 @@ export default function Home() {
     }
   };
 
-  const handleResume = (resumeIndex: number) => {
-    setLastSession(null);
-    setResumeLoading(false);
-    setView('quiz');
-    // QuizMode will start at the resumed index
-    // We signal this by scrolling to quiz section
+  const filteredQuestions =
+    selectedTopic === 'All' ? questions : questions.filter((q) => q.topic === selectedTopic);
+
+  const resumeQuestionIndex =
+    lastSession && selectedTopic !== 'All'
+      ? questions.findIndex((q) => q.id === lastSession.questionId && q.topic === selectedTopic)
+      : lastSession
+      ? questions.findIndex((q) => q.id === lastSession.questionId)
+      : -1;
+
+  // Short labels for tabs
+  const tabLabels: Record<string, string> = {
+    'All': 'All',
+    'System Integ SA1': 'SA1',
+    'System Integ SA2': 'SA2',
+    'System Integ SA3': 'SA3',
+    'System Integ SA4': 'SA4',
   };
 
   if (!isAuthenticated) {
@@ -120,11 +137,6 @@ export default function Home() {
     );
   }
 
-  // Find question index for resume
-  const resumeQuestionIndex = lastSession
-    ? questions.findIndex((q) => q.id === lastSession.questionId)
-    : -1;
-
   return (
     <div className="flex min-h-screen flex-col bg-[#0f0f0f]">
       {/* Streak banner */}
@@ -143,7 +155,7 @@ export default function Home() {
       )}
 
       {/* Resume banner */}
-      {lastSession && resumeQuestionIndex >= 0 && view !== 'quiz' && (
+      {lastSession && resumeQuestionIndex >= 0 && view === 'quiz' && (
         <div className="bg-[#1a1a1a] border-b border-[#2a2a2a] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-white/70 shrink-0">
@@ -168,7 +180,26 @@ export default function Home() {
         </div>
       )}
 
-      {/* Nav */}
+      {/* Topic tabs — global filter */}
+      <div className="border-b border-[#2a2a2a] px-2 py-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 min-w-max">
+          {['All', ...TOPICS].map((topic) => (
+            <button
+              key={topic}
+              onClick={() => setSelectedTopic(topic)}
+              className={`min-h-12 px-6 rounded-xl font-medium text-sm active:scale-95 transition-all ${
+                selectedTopic === topic
+                  ? 'bg-[#22d3ee] text-[#0f0f0f]'
+                  : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:border-[#22d3ee]/50'
+              }`}
+            >
+              {tabLabels[topic] ?? topic}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Mode nav */}
       <nav className="flex border-b border-[#2a2a2a]">
         {(['quiz', 'flashcards', 'mistakes', 'scores'] as View[]).map((v) => (
           <button
@@ -187,16 +218,10 @@ export default function Home() {
 
       {/* Content */}
       <main className="flex-1">
-        {view === 'quiz' && questions.length > 0 && (
-          <QuizMode questions={questions} />
-        )}
-        {view === 'flashcards' && questions.length > 0 && (
-          <FlashcardMode questions={questions} />
-        )}
-        {view === 'mistakes' && questions.length > 0 && (
-          <WrongAnswersMode questions={questions} />
-        )}
-        {view === 'scores' && <ScoreBoard />}
+        {view === 'quiz' && <QuizMode questions={filteredQuestions} />}
+        {view === 'flashcards' && <FlashcardMode questions={filteredQuestions} />}
+        {view === 'mistakes' && <WrongAnswersMode questions={questions} selectedTopic={selectedTopic} />}
+        {view === 'scores' && <ScoreBoard questions={filteredQuestions} />}
       </main>
     </div>
   );

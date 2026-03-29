@@ -15,24 +15,41 @@ interface Question {
 
 interface WrongAnswersModeProps {
   questions: Question[];
+  selectedTopic: string;
 }
 
-export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
-  const [wrongMap, setWrongMap] = useState<Record<number, { selectedAnswer: string; timestamp: number }>>({});
+export default function WrongAnswersMode({ questions, selectedTopic }: WrongAnswersModeProps) {
+  const [wrongMap, setWrongMap] = useState<Record<number, {
+    selectedAnswer: string;
+    timestamp: number;
+    topic: string;
+  }>>({});
   const [expanded, setExpanded] = useState<number | null>(null);
   const [cleared, setCleared] = useState(false);
 
   useEffect(() => {
     const stored = getWrongAnswers();
-    const map: Record<number, { selectedAnswer: string; timestamp: number }> = {};
+    const map: Record<number, { selectedAnswer: string; timestamp: number; topic: string }> = {};
     Object.values(stored).forEach((w: unknown) => {
-      const wrong = w as { questionId: number; selectedAnswer: string; timestamp: number };
-      map[wrong.questionId] = { selectedAnswer: wrong.selectedAnswer, timestamp: wrong.timestamp };
+      const wrong = w as { questionId: number; selectedAnswer: string; timestamp: number; topic: string };
+      map[wrong.questionId] = {
+        selectedAnswer: wrong.selectedAnswer,
+        timestamp: wrong.timestamp,
+        topic: wrong.topic,
+      };
     });
     setWrongMap(map);
   }, []);
 
-  const wrongIds = Object.keys(wrongMap).map(Number);
+  // Filter: only wrong answers matching selectedTopic
+  const wrongIds = Object.keys(wrongMap)
+    .map(Number)
+    .filter((id) => {
+      if (selectedTopic === 'All') return true;
+      const info = wrongMap[id];
+      return info?.topic === selectedTopic;
+    });
+
   const wrongQuestions = wrongIds
     .map((id) => questions.find((q) => q.id === id))
     .filter(Boolean) as Question[];
@@ -48,21 +65,40 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
   };
 
   const handleClearAll = () => {
-    clearWrongAnswers();
-    setWrongMap({});
+    if (selectedTopic === 'All') {
+      clearWrongAnswers();
+      setWrongMap({});
+    } else {
+      // Clear only selected topic's wrong answers
+      const next = { ...wrongMap };
+      wrongIds.forEach((id) => delete next[id]);
+      setWrongMap(next);
+      // Persist
+      const allStored = getWrongAnswers();
+      wrongIds.forEach((id) => delete allStored[id]);
+      localStorage.setItem('study_wrong_answers', JSON.stringify(allStored));
+    }
     setExpanded(null);
     setCleared(true);
     setTimeout(() => setCleared(false), 2000);
   };
 
+  // Empty state
   if (wrongQuestions.length === 0) {
     return (
-      <div className="max-w-lg mx-auto px-4 pt-8 pb-8 text-center">
-        <div className="text-5xl mb-4">📝</div>
-        <h2 className="text-xl font-bold text-white mb-2">No Mistakes Yet</h2>
-        <p className="text-white/40 text-sm">
-          Wrong answers will appear here so you can review them later.
-        </p>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-gray-400 text-lg leading-relaxed">
+            {selectedTopic === 'All'
+              ? 'No mistakes to review yet.'
+              : `No mistakes to review in ${selectedTopic}.`}
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            {selectedTopic === 'All'
+              ? 'Wrong answers will appear here.'
+              : 'Take a quiz to add mistakes.'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -73,7 +109,10 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-white font-bold text-base">Mistakes Bank</h2>
-          <p className="text-white/40 text-xs">{wrongQuestions.length} question{wrongQuestions.length !== 1 ? 's' : ''}</p>
+          <p className="text-white/40 text-xs">
+            {wrongQuestions.length} question{wrongQuestions.length !== 1 ? 's' : ''}
+            {selectedTopic !== 'All' ? ` in ${selectedTopic}` : ''}
+          </p>
         </div>
         <button
           onClick={handleClearAll}
@@ -89,7 +128,7 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          All mistakes cleared.
+          Cleared.
         </motion.p>
       )}
 
@@ -117,7 +156,7 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
                   <div className="flex-1 min-w-0">
                     <p className="text-white/70 text-sm font-medium truncate">{q.question}</p>
                     <p className="text-white/30 text-xs mt-0.5">
-                      {q.topic} · You answered:{' '}
+                      {q.topic} · You:{' '}
                       <span className="text-red-400">{info?.selectedAnswer}</span>
                     </p>
                   </div>
@@ -133,7 +172,7 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                     >
-                      {/* All options */}
+                      {/* Options */}
                       <div className="space-y-2">
                         {Object.entries(q.options).map(([label, text]) => {
                           const isCorrect = label === q.correctAnswer;
@@ -158,22 +197,18 @@ export default function WrongAnswersMode({ questions }: WrongAnswersModeProps) {
                         })}
                       </div>
 
-                      {/* Explanation */}
                       {q.explanation && (
                         <p className="text-white/40 text-xs italic leading-relaxed">
                           {q.explanation}
                         </p>
                       )}
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleRemove(q.id)}
-                          className="flex-1 min-h-10 text-xs text-green-400 border border-green-400/40 rounded-lg hover:bg-green-400/10 transition-colors"
-                        >
-                          Mark as Reviewed
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleRemove(q.id)}
+                        className="w-full min-h-10 text-xs text-green-400 border border-green-400/40 rounded-lg hover:bg-green-400/10 transition-colors"
+                      >
+                        Mark as Reviewed
+                      </button>
                     </motion.div>
                   )}
                 </AnimatePresence>
