@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getProgress, saveProgress } from '@/lib/storage';
 
 interface Question {
   id: number;
@@ -21,40 +23,42 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRevealed, setIsRevealed] = useState(false);
   const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
+  const [prefersReduced, setPrefersReduced] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setSeenIds(new Set(JSON.parse(stored)));
-    }
+    if (stored) setSeenIds(new Set(JSON.parse(stored)));
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReduced(mq.matches);
   }, []);
 
   const currentQuestion = questions[currentIndex];
+  const progress = ((currentIndex + 1) / questions.length) * 100;
 
   const markAsSeen = (id: number) => {
     const newSeen = new Set(seenIds);
     newSeen.add(id);
     setSeenIds(newSeen);
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...newSeen]));
+    // Sync to shared progress store
+    const prog = getProgress();
+    if (!prog.completedQuestions.includes(String(id))) {
+      saveProgress({
+        completedQuestions: [...prog.completedQuestions, String(id)],
+        scoresByTopic: prog.scoresByTopic,
+      });
+    }
   };
 
   const handleNext = () => {
     markAsSeen(currentQuestion.id);
     setIsRevealed(false);
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      setCurrentIndex(0);
-    }
+    setCurrentIndex((i) => (i < questions.length - 1 ? i + 1 : 0));
   };
 
   const handlePrev = () => {
     setIsRevealed(false);
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else {
-      setCurrentIndex(questions.length - 1);
-    }
+    setCurrentIndex((i) => (i > 0 ? i - 1 : questions.length - 1));
   };
 
   const handleReveal = () => {
@@ -62,73 +66,104 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
     markAsSeen(currentQuestion.id);
   };
 
+  // 3D flip: front shows question, back shows answer
+  const cardVariants = {
+    flip: { rotateY: prefersReduced ? 0 : 180 },
+    unflip: { rotateY: 0 },
+  };
+
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="text-gray-400 text-sm">{currentQuestion.topic}</span>
-        <span className="text-gray-500 text-sm">
-          {currentIndex + 1} / {questions.length}
-        </span>
+    <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
+      {/* Progress bar — always visible */}
+      <div className="mb-6">
+        <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-[#22d3ee] rounded-full"
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: prefersReduced ? 0 : 0.4, ease: 'easeOut' }}
+          />
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-white/50 text-xs">{currentQuestion.topic}</span>
+          <span className="text-[#22d3ee] text-xs font-mono">
+            {currentIndex + 1} / {questions.length}
+          </span>
+        </div>
       </div>
 
-      <div
-        className="bg-gray-800 border border-gray-700 rounded-2xl p-8 min-h-64 cursor-pointer transition-all hover:border-gray-600"
-        onClick={!isRevealed ? handleReveal : undefined}
-      >
-        <p className="text-white text-xl text-center leading-relaxed">
-          {currentQuestion.question}
-        </p>
+      {/* Card — 3D flip */}
+      <div className="perspective-1000 mb-8">
+        <motion.div
+          className="relative w-full min-h-64 cursor-pointer"
+          onClick={!isRevealed ? handleReveal : undefined}
+          animate={isRevealed ? 'flip' : 'unflip'}
+          variants={cardVariants}
+          transition={{ duration: prefersReduced ? 0 : 0.5, ease: 'easeInOut' }}
+          style={{ transformStyle: 'preserve-3d' }}
+        >
+          {/* Front */}
+          <div
+            className="absolute inset-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 flex flex-col items-center justify-center"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <p className="text-gray-100 text-xl font-bold leading-relaxed text-center">
+              {currentQuestion.question}
+            </p>
+            {!isRevealed && (
+              <p className="text-white/30 text-sm mt-6">Tap to reveal answer</p>
+            )}
+          </div>
 
-        {isRevealed && (
-          <div className="mt-8 pt-6 border-t border-gray-700">
-            <p className="text-gray-300 text-center text-lg">
-              <span className="text-green-400 font-semibold">{currentQuestion.correctAnswer}</span>
-              {' - '}
+          {/* Back */}
+          <div
+            className="absolute inset-0 bg-[#1a1a1a] border-2 border-[#22d3ee] rounded-2xl p-8 flex flex-col items-center justify-center"
+            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          >
+            <p className="text-[#22d3ee] text-2xl font-bold mb-4">
+              {currentQuestion.correctAnswer}
+            </p>
+            <p className="text-gray-100 text-center text-lg leading-relaxed mb-6">
               {currentQuestion.options[currentQuestion.correctAnswer]}
             </p>
             {currentQuestion.explanation && (
-              <p className="text-gray-500 text-center mt-4 text-sm italic">
+              <p className="text-white/50 text-sm text-center italic leading-relaxed">
                 {currentQuestion.explanation}
               </p>
             )}
           </div>
-        )}
+        </motion.div>
       </div>
 
-      {!isRevealed && (
-        <p className="text-gray-500 text-center mt-4 text-sm">
-          Tap card to reveal answer
-        </p>
-      )}
-
-      <div className="flex justify-between items-center mt-8">
+      {/* Navigation */}
+      <div className="flex gap-3">
         <button
           onClick={handlePrev}
-          className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors"
+          className="flex-1 min-h-12 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white font-medium active:scale-95 transition-transform text-sm"
         >
-          Previous
+          ← Prev
         </button>
 
         {isRevealed ? (
           <button
             onClick={handleNext}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors"
+            className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
           >
             Next Card
           </button>
         ) : (
           <button
             onClick={handleReveal}
-            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-colors"
+            className="flex-1 min-h-12 bg-[#22c55e] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
           >
-            Reveal Answer
+            Reveal
           </button>
         )}
       </div>
 
-      <div className="mt-6 text-center text-gray-500 text-sm">
-        {seenIds.size} cards seen
-      </div>
+      {/* Seen count */}
+      <p className="text-center text-white/30 text-xs mt-6">
+        {seenIds.size} of {questions.length} cards seen
+      </p>
     </div>
   );
 }
