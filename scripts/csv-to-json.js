@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const csv = require('csv-parse');
+const Papa = require('papaparse');
 
 const CSV_DIR = '/home/xynate/workspace-dev/personal/system_integration_question-bank/';
 const OUTPUT_FILE = path.join(__dirname, '../public/questions.json');
@@ -17,95 +17,84 @@ async function processCSVs() {
     const topic = file.replace('.csv', '');
     const filePath = path.join(CSV_DIR, file);
     const content = fs.readFileSync(filePath, 'utf-8');
-    const rows = content.split('\n');
 
-    // Skip row 0 (headers) and rows 1-22 (instruction/description rows)
-    // The actual data starts after the instruction block
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      // Skip header row and instruction rows (contain "(required)", "(optional)", etc.)
-      if (i === 0 || row.includes('(required)') || row.includes('(optional)') ||
-          row.includes('default is') || row.includes('between 1-5') ||
-          row.includes('Time in seconds') || row.includes('Image Link') ||
-          row.includes('Explanation for the answer') || row.trim() === '') {
-        continue;
+    const { data, errors } = Papa.parse(content, {
+      skipEmptyLines: true,
+      transformHeader: (h) => h.trim(),
+    });
+
+    if (errors.length > 0) {
+      console.warn(`Warnings parsing ${file}:`, errors.map(e => e.message));
+    }
+
+    // Row 0 = header, Row 1 = description/instruction row
+    // Data starts at row 2
+    const header = data[0];
+    const descRow = data[1];
+    const dataRows = data.slice(2);
+
+    // Map column indices
+    const colIdx = {};
+    header.forEach((col, i) => { colIdx[col] = i; });
+
+    for (const row of dataRows) {
+      const questionText = (row[colIdx['Question Text']] || '').trim();
+      if (!questionText) continue;
+
+      // Build options array from Option 1–5
+      const rawOptions = [];
+      for (let n = 1; n <= 5; n++) {
+        const val = (row[colIdx[`Option ${n}`]] || '').trim();
+        rawOptions.push(val);
       }
 
-      // Parse CSV row
-      const parsed = parseCSVRow(row);
-      if (parsed.length < 8) continue;
+      // Filter to non-empty options
+      const nonEmptyOptions = rawOptions.filter(v => v && v.length > 0);
 
-      const [questionText, , opt1, opt2, opt3, opt4, opt5, correctAnswer, , , explanation] = parsed;
+      // Correct Answer is an integer (1–5)
+      const caRaw = (row[colIdx['Correct Answer']] || '').trim();
 
-      // Skip if question text is empty
-      if (!questionText || questionText.trim() === '') continue;
-
-      // Skip open-ended rows (Correct Answer not 1-5)
-      const ca = correctAnswer ? correctAnswer.trim() : '';
-      if (!['1', '2', '3', '4', '5'].includes(ca)) {
+      // Skip open-ended, poll, draw, fill-in-the-blank (not 1–5)
+      if (!/^[1-5]$/.test(caRaw)) {
         rowsRejected++;
         continue;
       }
 
-      // Build options object
-      const options = {};
-      const optionMap = { 1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E' };
-      const rawOptions = [opt1, opt2, opt3, opt4, opt5];
+      const ca = parseInt(caRaw, 10);
 
-      rawOptions.forEach((opt, idx) => {
-        if (opt && opt.trim() && !opt.includes('No answer text provided')) {
-          options[optionMap[idx + 1]] = opt.trim();
-        }
+      // Validate CA doesn't exceed available options
+      if (ca > nonEmptyOptions.length || ca < 1) {
+        rowsRejected++;
+        continue;
+      }
+
+      const optionMap = { 1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E' };
+      const options = {};
+      nonEmptyOptions.forEach((opt, idx) => {
+        options[optionMap[idx + 1]] = opt;
       });
 
-      // Skip if no valid options
-      if (Object.keys(options).length === 0) {
-        rowsRejected++;
-        continue;
-      }
+      const explanation = (row[colIdx['Answer explanation']] || '').trim();
 
       allQuestions.push({
         id: id++,
         topic,
-        question: questionText.replace(/"/g, '').trim(),
+        question: questionText,
         options,
-        correctAnswer: optionMap[parseInt(ca)],
-        explanation: explanation ? explanation.replace(/"/g, '').trim() : ''
+        correctAnswer: optionMap[ca],
+        explanation,
       });
 
       topicsFound.add(topic);
     }
   }
 
-  // Write output
   fs.writeFileSync(OUTPUT_FILE, JSON.stringify(allQuestions, null, 2));
 
   console.log(`total_questions: ${allQuestions.length}`);
   console.log(`topics_found: ${Array.from(topicsFound).sort().join(', ')}`);
   console.log(`rows_rejected: ${rowsRejected}`);
   console.log(`Output written to: ${OUTPUT_FILE}`);
-}
-
-function parseCSVRow(row) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < row.length; i++) {
-    const char = row[i];
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-
-  return result;
 }
 
 processCSVs().catch(console.error);
