@@ -272,13 +272,13 @@ export default function QuizMode({ questions }: QuizModeProps) {
       <motion.div
         className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 mb-8"
         animate={
-          isWrong && !prefersReduced
+          isReviewMode && isWrong && !prefersReduced
             ? { x: [0, -5, 5, -5, 5, 0] }
-            : isCorrect && !prefersReduced
+            : isReviewMode && isCorrect && !prefersReduced
             ? { scale: [1, 1.02, 1] }
             : {}
         }
-        transition={isWrong ? { duration: 0.4 } : isCorrect ? { duration: 0.5 } : {}}
+        transition={isReviewMode && isWrong ? { duration: 0.4 } : isReviewMode && isCorrect ? { duration: 0.5 } : {}}
       >
         <p className="text-gray-100 text-xl font-bold leading-relaxed">
           {currentQuestion.question}
@@ -294,7 +294,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
           let bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
           let textClass = 'text-gray-100';
 
-          if (feedback) {
+          if (feedback && isReviewMode) {
             if (label === currentQuestion.correctAnswer) {
               bgClass = 'bg-green-600 border-green-400';
               textClass = 'text-white';
@@ -305,8 +305,12 @@ export default function QuizMode({ questions }: QuizModeProps) {
               bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
               textClass = 'text-white/30';
             }
+          } else if (answered && !isReviewMode) {
+            // Review OFF: neutral gray after tap, no color feedback
+            bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
+            textClass = label === selectedAnswer ? 'text-gray-100' : 'text-white/30';
           } else if (selectedAnswer === label) {
-            // R3: Selected state before API responds — immediate feedback
+            // Selected state before API responds — immediate feedback
             bgClass = 'bg-blue-800 border-blue-500';
             textClass = 'text-white';
           }
@@ -332,9 +336,9 @@ export default function QuizMode({ questions }: QuizModeProps) {
         })}
       </div>
 
-      {/* Feedback panel */}
+      {/* Feedback panel — only in Review ON mode */}
       <AnimatePresence>
-        {feedback && (
+        {isReviewMode && feedback && (
           <motion.div
             className={`rounded-2xl p-4 mb-4 border ${
               isCorrect ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'
@@ -380,9 +384,26 @@ export default function QuizMode({ questions }: QuizModeProps) {
             animate={{ opacity: 1, scale: 1 }}
           >
             <p className="text-[#22d3ee] font-bold text-lg text-center mb-2">Quiz Complete!</p>
-            <p className="text-white/60 text-center text-sm">
-              {score} / {displayQuestions.length} correct
+            <p className="text-white/60 text-center text-sm mb-1">
+              Final Score
             </p>
+            <p className="text-white font-bold text-2xl text-center mb-4">
+              {score} / {displayQuestions.length}
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {}}
+                className="w-full min-h-10 text-xs text-[#a855f7] border border-[#a855f7]/50 rounded-xl hover:bg-[#a855f7]/10 transition-colors"
+              >
+                View Detailed Feedback
+              </button>
+              <button
+                onClick={handleRestart}
+                className="w-full min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
+              >
+                Retake Quiz
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -405,12 +426,23 @@ export default function QuizMode({ questions }: QuizModeProps) {
             Restart
           </button>
         ) : answered ? (
-          <button
-            onClick={handleNext}
-            className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
-          >
-            {currentIndex === displayQuestions.length - 1 ? 'Finish' : 'Next →'}
-          </button>
+          isReviewMode ? (
+            feedback && (
+              <button
+                onClick={handleNext}
+                className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
+              >
+                {currentIndex === displayQuestions.length - 1 ? 'Finish' : 'Next →'}
+              </button>
+            )
+          ) : (
+            <button
+              onClick={handleNext}
+              className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
+            >
+              {currentIndex === displayQuestions.length - 1 ? 'Finish' : 'Next →'}
+            </button>
+          )
         ) : (
           <div className="flex-1 min-h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center text-white/30 text-sm">
             Pick an answer
