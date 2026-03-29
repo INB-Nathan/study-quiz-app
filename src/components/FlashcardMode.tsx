@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { getProgress, saveProgress } from '@/lib/storage';
 
 interface Question {
@@ -32,7 +32,7 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
     setPrefersReduced(mq.matches);
   }, []);
 
-  // Mid-session reset when topic changes
+  // Reset on topic change
   useEffect(() => {
     setCurrentIndex(0);
     setIsRevealed(false);
@@ -71,20 +71,19 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
     setIsRevealed(true);
   };
 
-  // Empty state
   if (questions.length === 0) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-gray-400 text-lg leading-relaxed">
-            No flashcards in this topic.
-          </p>
+          <p className="text-gray-400 text-lg leading-relaxed">No flashcards in this topic.</p>
           <p className="text-gray-500 text-sm mt-2">Pick another topic above.</p>
         </div>
       </div>
     );
   }
 
+  // R1: Conditional rendering — NO back face during flip, no backfaceVisibility trick
+  // R2: Back face shows all options in grid with correct highlighted green
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
       {/* Progress bar */}
@@ -104,50 +103,62 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
         </div>
       </div>
 
-      {/* Card — 3D flip */}
-      <div className="perspective-1000 mb-8">
-        <motion.div
-          className="relative w-full min-h-64 cursor-pointer"
-          onClick={!isRevealed ? handleReveal : undefined}
-          animate={isRevealed ? 'flip' : 'unflip'}
-          variants={{
-            flip: { rotateY: prefersReduced ? 0 : 180 },
-            unflip: { rotateY: 0 },
-          }}
-          transition={{ duration: prefersReduced ? 0 : 0.5, ease: 'easeInOut' }}
-          style={{ transformStyle: 'preserve-3d' }}
-        >
-          {/* Front */}
-          <div
-            className="absolute inset-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 flex flex-col items-center justify-center"
-            style={{ backfaceVisibility: 'hidden' }}
+      {/* Card — conditional: show question OR answer, never both during transition */}
+      <div className="mb-8">
+        {!isRevealed ? (
+          // FRONT: Question only
+          <motion.div
+            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-8 min-h-64 flex flex-col items-center justify-center cursor-pointer"
+            onClick={handleReveal}
+            animate={prefersReduced ? {} : { scale: [1, 0.98, 1] }}
+            transition={{ duration: 0.15 }}
+            whileTap={prefersReduced ? {} : { scale: 0.97 }}
           >
             <p className="text-gray-100 text-xl font-bold leading-relaxed text-center">
               {currentQuestion.question}
             </p>
-            {!isRevealed && (
-              <p className="text-white/30 text-sm mt-6">Tap to reveal answer</p>
-            )}
-          </div>
-
-          {/* Back */}
-          <div
-            className="absolute inset-0 bg-[#1a1a1a] border-2 border-[#22d3ee] rounded-2xl p-8 flex flex-col items-center justify-center"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            <p className="text-white/30 text-sm mt-6">Tap to reveal answer</p>
+          </motion.div>
+        ) : (
+          // BACK: Answer + all options grid + explanation
+          <motion.div
+            className="bg-[#1a1a1a] border-2 border-[#22d3ee] rounded-2xl p-6 min-h-64"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: prefersReduced ? 0 : 0.3 }}
           >
-            <p className="text-[#22d3ee] text-2xl font-bold mb-4">
-              {currentQuestion.correctAnswer}
+            {/* Correct answer header */}
+            <p className="text-[#22d3ee] text-center font-bold text-base mb-4">
+              Answer: {currentQuestion.correctAnswer}
             </p>
-            <p className="text-gray-100 text-center text-lg leading-relaxed mb-6">
-              {currentQuestion.options[currentQuestion.correctAnswer]}
-            </p>
+
+            {/* All options grid — R2 */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {Object.entries(currentQuestion.options).map(([key, value]) => {
+                const isCorrect = key === currentQuestion.correctAnswer;
+                return (
+                  <div
+                    key={key}
+                    className={`p-2 rounded-lg text-xs text-center ${
+                      isCorrect
+                        ? 'bg-green-600/30 border border-green-400 text-green-100'
+                        : 'bg-[#2a2a2a] text-white/50'
+                    }`}
+                  >
+                    <span className="font-bold">{key}.</span> {value}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Explanation */}
             {currentQuestion.explanation && (
-              <p className="text-white/50 text-sm text-center italic leading-relaxed">
+              <p className="text-white/40 text-xs italic text-center leading-relaxed">
                 {currentQuestion.explanation}
               </p>
             )}
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </div>
 
       {/* Navigation */}

@@ -36,13 +36,16 @@ export default function QuizMode({ questions }: QuizModeProps) {
   const [prefersReduced, setPrefersReduced] = useState(false);
   const [sessionScore, setSessionScore] = useState(0);
   const [sessionDone, setSessionDone] = useState(false);
+  const [resetFlash, setResetFlash] = useState(false); // R5: brief "Reset!" confirmation
+  // R6: local shuffled copy
+  const [shuffled, setShuffled] = useState<Question[] | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReduced(mq.matches);
   }, []);
 
-  // Mid-session reset: when topic changes (questions prop changes), reset all state
+  // Mid-session reset on topic change
   useEffect(() => {
     setCurrentIndex(0);
     setSelectedAnswer(null);
@@ -51,72 +54,123 @@ export default function QuizMode({ questions }: QuizModeProps) {
     setSessionScore(0);
     setAnswered(false);
     setSessionDone(false);
+    setShuffled(null);
   }, [questions]);
 
-  const currentQuestion = questions[currentIndex];
-  const progress = questions.length > 0 ? ((currentIndex + 1) / questions.length) * 100 : 0;
+  // Use shuffled copy if available, otherwise original
+  const displayQuestions = shuffled ?? questions;
+
+  // Reset shuffled when topic changes
+  useEffect(() => {
+    setShuffled(null);
+  }, [questions]);
+
+  const currentQuestion = displayQuestions[currentIndex];
+  const progress = displayQuestions.length > 0 ? ((currentIndex + 1) / displayQuestions.length) * 100 : 0;
   const optionLabels = Object.keys(currentQuestion?.options ?? {});
 
-  // Save last session on every question change
   useEffect(() => {
     if (!answered && !sessionDone && currentQuestion) {
       saveLastSession(currentQuestion.id, currentQuestion.topic);
     }
   }, [currentIndex, currentQuestion, answered, sessionDone]);
 
+  // R3: Optimistic UI — set visual state BEFORE fetch
   const handleAnswer = async (answer: string) => {
     if (answered || sessionDone || !currentQuestion) return;
 
+    // Immediate feedback — user sees button highlight instantly
     setSelectedAnswer(answer);
     setAnswered(true);
 
-    try {
-      const res = await fetch(`/api/quiz?review=${isReviewMode}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: currentQuestion.id, selectedAnswer: answer }),
-      });
-      const data = await res.json();
-      setFeedback(data);
-
-      if (data.correct) {
-        setScore((s) => s + 1);
-        setSessionScore((s) => s + 1);
-        removeWrongAnswer(currentQuestion.id);
-      } else {
-        if (!isReviewMode) {
-          addWrongAnswer({
-            questionId: currentQuestion.id,
-            topic: currentQuestion.topic,
-            question: currentQuestion.question,
-            selectedAnswer: answer,
-            correctAnswer: currentQuestion.correctAnswer,
-            explanation: currentQuestion.explanation || '',
-            timestamp: Date.now(),
+    // Fire-and-forget API call — only updates feedback state
+    fetch(`/api/quiz?review=${isReviewMode}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: currentQuestion.id, selectedAnswer: answer }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setFeedback(data);
+        if (data.correct) {
+          setScore((s) => s + 1);
+          setSessionScore((s) => s + 1);
+          removeWrongAnswer(currentQuestion.id);
+        } else {
+          if (!isReviewMode) {
+            addWrongAnswer({
+              questionId: currentQuestion.id,
+              topic: currentQuestion.topic,
+              question: currentQuestion.question,
+              selectedAnswer: answer,
+              correctAnswer: currentQuestion.correctAnswer,
+              explanation: currentQuestion.explanation || '',
+              timestamp: Date.now(),
+            });
+          }
+        }
+        const prog = getProgress();
+        if (!prog.completedQuestions.includes(String(currentQuestion.id))) {
+          saveProgress({
+            completedQuestions: [...prog.completedQuestions, String(currentQuestion.id)],
+            scoresByTopic: { ...prog.scoresByTopic, [currentQuestion.topic]: score + (data.correct ? 1 : 0) },
           });
         }
-      }
+      })
+      .catch(() => {
+        // Network error — leave selected state, clear answered to let user retry
+        setSelectedAnswer(null);
+        setAnswered(false);
+        setFeedback(null);
+      });
+  };
 
-      const prog = getProgress();
-      if (!prog.completedQuestions.includes(String(currentQuestion.id))) {
-        saveProgress({
-          completedQuestions: [...prog.completedQuestions, String(currentQuestion.id)],
-          scoresByTopic: { ...prog.scoresByTopic, [currentQuestion.topic]: score + (data.correct ? 1 : 0) },
-        });
-      }
-    } catch {
-      // Network error — fail silently
+  // R4: Per-question reset
+  const handleResetQuestion = () => {
+    setSelectedAnswer(null);
+    setFeedback(null);
+    setAnswered(false);
+  };
+
+  // R5: Full quiz reset
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setFeedback(null);
+    setScore(0);
+    setSessionScore(0);
+    setAnswered(false);
+    setSessionDone(false);
+    setResetFlash(true);
+    setTimeout(() => setResetFlash(false), 1500);
+  };
+
+  // R6: Fisher-Yates shuffle
+  const handleShuffle = () => {
+    if (answered || sessionDone) return;
+    const arr = [...displayQuestions];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    setShuffled(arr);
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setFeedback(null);
+    setScore(0);
+    setSessionScore(0);
+    setAnswered(false);
+    setSessionDone(false);
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < displayQuestions.length - 1) {
       setCurrentIndex((i) => i + 1);
       setSelectedAnswer(null);
       setFeedback(null);
       setAnswered(false);
     } else {
-      recordStudySession(currentQuestion.topic, sessionScore, questions.length);
+      recordStudySession(currentQuestion.topic, sessionScore, displayQuestions.length);
       setSessionScore(0);
       setSessionDone(true);
     }
@@ -131,27 +185,14 @@ export default function QuizMode({ questions }: QuizModeProps) {
     }
   };
 
-  const handleRestart = () => {
-    setCurrentIndex(0);
-    setSelectedAnswer(null);
-    setFeedback(null);
-    setScore(0);
-    setSessionScore(0);
-    setAnswered(false);
-    setSessionDone(false);
-  };
-
   const isCorrect = feedback?.correct === true;
   const isWrong = answered && feedback?.correct === false;
 
-  // Empty state
-  if (questions.length === 0) {
+  if (displayQuestions.length === 0) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="text-center">
-          <p className="text-gray-400 text-lg leading-relaxed">
-            No questions in this topic.
-          </p>
+          <p className="text-gray-400 text-lg leading-relaxed">No questions in this topic.</p>
           <p className="text-gray-500 text-sm mt-2">Pick another topic above.</p>
         </div>
       </div>
@@ -161,7 +202,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-8">
       {/* Progress bar */}
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-[#22d3ee] rounded-full"
@@ -169,7 +210,26 @@ export default function QuizMode({ questions }: QuizModeProps) {
             transition={{ duration: prefersReduced ? 0 : 0.4, ease: 'easeOut' }}
           />
         </div>
-        <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center justify-between mt-2">
+          {/* R6 Shuffle + R5 Reset All — left group */}
+          <div className="flex gap-1.5">
+            <button
+              onClick={handleShuffle}
+              disabled={answered || sessionDone}
+              title="Shuffle questions"
+              className="text-xs px-3 py-1 rounded-lg border border-[#2a2a2a] text-white/40 hover:text-white hover:border-[#22d3ee]/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              🔀 Shuffle
+            </button>
+            <button
+              onClick={handleRestart}
+              title="Reset all"
+              className="text-xs px-3 py-1 rounded-lg border border-[#2a2a2a] text-white/40 hover:text-white disabled:opacity-30 transition-colors"
+            >
+              🔄 Reset All
+            </button>
+          </div>
+          {/* R3 Review toggle */}
           <button
             onClick={() => setIsReviewMode((m) => !m)}
             className={`text-xs px-3 py-1 rounded-lg border transition-colors ${
@@ -180,16 +240,32 @@ export default function QuizMode({ questions }: QuizModeProps) {
           >
             {isReviewMode ? 'Review ON' : 'Review'}
           </button>
-          <span className="text-[#22d3ee] text-xs font-mono">
-            {currentIndex + 1} / {questions.length}
-          </span>
         </div>
+        {/* R5 Reset flash */}
+        <AnimatePresence>
+          {resetFlash && (
+            <motion.p
+              className="text-green-400 text-xs text-center mt-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              Reset!
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Score + topic */}
+      {/* Counter row */}
       <div className="flex justify-between items-start mb-6">
         <span className="text-white/50 text-xs">{currentQuestion.topic}</span>
-        <span className="text-white/30 text-xs">Score: {score}</span>
+        <div className="flex gap-3 items-center">
+          <span className="text-[#22d3ee] text-xs font-mono">
+            {currentIndex + 1} / {displayQuestions.length}
+          </span>
+          <span className="text-white/30 text-xs">Score: {score}</span>
+        </div>
       </div>
 
       {/* Question card */}
@@ -211,65 +287,56 @@ export default function QuizMode({ questions }: QuizModeProps) {
 
       {/* Answer buttons */}
       <div className="space-y-3 mb-6">
-        <AnimatePresence mode="wait">
-          {optionLabels.map((label) => {
-            const optionText = currentQuestion.options[label];
-            if (!optionText) return null;
+        {optionLabels.map((label) => {
+          const optionText = currentQuestion.options[label];
+          if (!optionText) return null;
 
-            let bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
-            let textClass = 'text-gray-100';
-            let disabled = false;
+          let bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
+          let textClass = 'text-gray-100';
 
-            if (feedback) {
-              if (label === currentQuestion.correctAnswer) {
-                bgClass = 'bg-green-600 border-green-400';
-                textClass = 'text-white';
-                disabled = true;
-              } else if (label === selectedAnswer && !feedback.correct) {
-                bgClass = 'bg-red-900/60 border-red-500';
-                textClass = 'text-white/70';
-                disabled = true;
-              } else {
-                bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
-                textClass = 'text-white/30';
-                disabled = true;
-              }
+          if (feedback) {
+            if (label === currentQuestion.correctAnswer) {
+              bgClass = 'bg-green-600 border-green-400';
+              textClass = 'text-white';
+            } else if (label === selectedAnswer && !feedback.correct) {
+              bgClass = 'bg-red-900/60 border-red-500';
+              textClass = 'text-white/70';
+            } else {
+              bgClass = 'bg-[#1a1a1a] border-[#2a2a2a]';
+              textClass = 'text-white/30';
             }
+          } else if (selectedAnswer === label) {
+            // R3: Selected state before API responds — immediate feedback
+            bgClass = 'bg-blue-800 border-blue-500';
+            textClass = 'text-white';
+          }
 
-            return (
-              <motion.button
-                key={label}
-                onClick={() => handleAnswer(label)}
-                disabled={answered || sessionDone}
-                className={`
-                  w-full min-h-12 rounded-xl border-2 text-left
-                  flex items-center gap-3 px-4 py-3
-                  transition-colors active:scale-95
-                  ${bgClass} ${textClass}
-                  ${!answered && !sessionDone ? 'hover:border-[#22d3ee] cursor-pointer' : 'cursor-default'}
-                `}
-                whileTap={!answered && !sessionDone && !prefersReduced ? { scale: 0.97 } : {}}
-                initial={false}
-                animate={
-                  isCorrect && label === selectedAnswer && !prefersReduced
-                    ? { backgroundColor: ['#1a1a1a', '#22c55e40', '#1a1a1a'] }
-                    : {}
-                }
-                transition={{ duration: 0.5 }}
-              >
-                <span className="font-bold text-sm w-5 shrink-0">{label}.</span>
-                <span className="text-sm leading-snug">{optionText}</span>
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+          return (
+            <motion.button
+              key={label}
+              onClick={() => handleAnswer(label)}
+              disabled={answered || sessionDone}
+              className={`
+                w-full min-h-12 rounded-xl border-2 text-left
+                flex items-center gap-3 px-4 py-3
+                transition-colors active:scale-95
+                ${bgClass} ${textClass}
+                ${!answered && !sessionDone ? 'hover:border-[#22d3ee] cursor-pointer' : 'cursor-default'}
+              `}
+              whileTap={!answered && !sessionDone && !prefersReduced ? { scale: 0.97 } : {}}
+            >
+              <span className="font-bold text-sm w-5 shrink-0">{label}.</span>
+              <span className="text-sm leading-snug">{optionText}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Feedback panel */}
       <AnimatePresence>
         {feedback && (
           <motion.div
-            className={`rounded-2xl p-4 mb-6 border ${
+            className={`rounded-2xl p-4 mb-4 border ${
               isCorrect ? 'bg-green-900/30 border-green-700' : 'bg-red-900/30 border-red-700'
             }`}
             initial={{ opacity: 0, y: 8 }}
@@ -285,6 +352,25 @@ export default function QuizMode({ questions }: QuizModeProps) {
         )}
       </AnimatePresence>
 
+      {/* R4: Reset Question button — only when answered */}
+      <AnimatePresence>
+        {answered && !sessionDone && feedback && (
+          <motion.div
+            className="mb-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <button
+              onClick={handleResetQuestion}
+              className="w-full min-h-10 text-xs text-orange-400 border border-orange-400/50 rounded-xl hover:bg-orange-400/10 transition-colors"
+            >
+              🔄 Reset Question
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Session done */}
       <AnimatePresence>
         {sessionDone && (
@@ -295,7 +381,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
           >
             <p className="text-[#22d3ee] font-bold text-lg text-center mb-2">Quiz Complete!</p>
             <p className="text-white/60 text-center text-sm">
-              {score} / {questions.length} correct
+              {score} / {displayQuestions.length} correct
             </p>
           </motion.div>
         )}
@@ -323,7 +409,7 @@ export default function QuizMode({ questions }: QuizModeProps) {
             onClick={handleNext}
             className="flex-1 min-h-12 bg-[#22d3ee] text-[#0f0f0f] rounded-xl font-bold active:scale-95 transition-transform text-sm"
           >
-            {currentIndex === questions.length - 1 ? 'Finish' : 'Next →'}
+            {currentIndex === displayQuestions.length - 1 ? 'Finish' : 'Next →'}
           </button>
         ) : (
           <div className="flex-1 min-h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center text-white/30 text-sm">
