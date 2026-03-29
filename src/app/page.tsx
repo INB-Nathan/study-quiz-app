@@ -1,64 +1,126 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import QuizMode from '@/components/QuizMode';
+import FlashcardMode from '@/components/FlashcardMode';
+import ScoreBoard from '@/components/ScoreBoard';
+
+type View = 'quiz' | 'flashcards' | 'scores';
+
+interface Question {
+  id: number;
+  topic: string;
+  question: string;
+  options: { [key: string]: string };
+  correctAnswer: string;
+  explanation: string;
+}
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+  const [view, setView] = useState<View>('quiz');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState<Question[]>([]);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem('study_access_key');
+    if (stored) setIsAuthenticated(true);
+    // Fetch questions for offline SW cache
+    fetch('/questions.json')
+      .then((r) => r.json())
+      .then((data) => setQuestions(data))
+      .catch(() => {});
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/validate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        sessionStorage.setItem('study_access_key', key);
+        setIsAuthenticated(true);
+      } else {
+        setError('Invalid access key. Please try again.');
+      }
+    } catch {
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0f0f0f] px-4">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold text-[#22d3ee]">🔔 Study Quiz</h1>
+            <p className="text-white/60 text-sm">
+              Enter your access key to begin.
+            </p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="ACCESS_KEY"
+              className="w-full rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-3 text-white placeholder-white/40 focus:border-[#22d3ee] focus:outline-none focus:ring-1 focus:ring-[#22d3ee] min-h-[44px]"
+              autoFocus
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {error && (
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading || !key}
+              className="w-full rounded-lg bg-[#22d3ee] text-[#0f0f0f] font-semibold py-3 hover:bg-[#06b6d4] transition-colors disabled:opacity-50 min-h-[44px]"
+            >
+              {loading ? 'Verifying...' : 'Enter'}
+            </button>
+          </form>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col bg-[#0f0f0f]">
+      {/* Nav */}
+      <nav className="flex border-b border-[#2a2a2a]">
+        {(['quiz', 'flashcards', 'scores'] as View[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`flex-1 py-3 text-sm font-medium capitalize transition-colors min-h-[44px] ${
+              view === v
+                ? 'text-[#22d3ee] border-b-2 border-[#22d3ee]'
+                : 'text-white/60 hover:text-white'
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </nav>
+
+      {/* Content */}
+      <main className="flex-1">
+        {view === 'quiz' && questions.length > 0 && (
+          <QuizMode questions={questions} />
+        )}
+        {view === 'flashcards' && questions.length > 0 && (
+          <FlashcardMode questions={questions} />
+        )}
+        {view === 'scores' && <ScoreBoard />}
       </main>
     </div>
   );
