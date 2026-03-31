@@ -11,6 +11,7 @@ interface Question {
   options: { [key: string]: string };
   correctAnswer: string;
   explanation: string;
+  answerText?: string;
 }
 
 interface FlashcardModeProps {
@@ -129,7 +130,7 @@ export default function FlashcardMode({ questions }: FlashcardModeProps) {
           >
             {/* Correct answer header */}
             <p className="text-[#22d3ee] text-center font-bold text-base mb-4">
-              Answer: {currentQuestion.correctAnswer}
+              Answer: {currentQuestion.answerText ?? currentQuestion.correctAnswer}
             </p>
 
             {/* All options grid — R2 */}

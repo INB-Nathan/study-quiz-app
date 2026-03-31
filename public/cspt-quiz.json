@@ -1,0 +1,1214 @@
+[
+  {
+    "id": 1,
+    "question": "It is a CPU component which holds the address of the location to or from which data are to be transferred.",
+    "options": [
+      "IR",
+      "PC",
+      "MAR",
+      "MDR"
+    ],
+    "correctAnswer": "MAR",
+    "explanation": ""
+  },
+  {
+    "id": 2,
+    "question": "It is one of the intangible parts of a computer system",
+    "options": [
+      "software",
+      "scanner",
+      "Mouse",
+      "keyboard"
+    ],
+    "correctAnswer": "software",
+    "explanation": ""
+  },
+  {
+    "id": 3,
+    "question": "It is a type of computer, which has found wide use in homes, schools and business offices.",
+    "options": [
+      "Mainframes",
+      "Personal Computers",
+      "Supercomputers",
+      "Workstations"
+    ],
+    "correctAnswer": "Personal Computers",
+    "explanation": ""
+  },
+  {
+    "id": 4,
+    "question": "It contains the series of commands that create software, all other programming languages must be converted to machine code for them to be understood because a CPU has a limited set of instructions known as machine code that it is capable of understanding.",
+    "options": [
+      "Programming Languages",
+      "Application Software",
+      "Software",
+      "Operating System"
+    ],
+    "correctAnswer": "Programming Languages",
+    "explanation": ""
+  },
+  {
+    "id": 5,
+    "question": "The Jcc (Unconditional Jump) instruction unconditionally transfers control to the target location.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "FALSE",
+    "explanation": ""
+  },
+  {
+    "id": 6,
+    "question": "in the xcopy dos command, you can use /e switch to copy all the files inside a subdirectory including all the subdirectories even it is empty.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 7,
+    "question": "It is an electronic device that accepts, processes, stores, and outputs data at high speeds according to programmed instructions.",
+    "options": [
+      "Buffer",
+      "Computer",
+      "Register",
+      "Hardware"
+    ],
+    "correctAnswer": "Computer",
+    "explanation": ""
+  },
+  {
+    "id": 8,
+    "question": "typing a dos command followed by /? will allow you to view the details of a specific command. ex. c:\\>copy/?",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 9,
+    "question": "given the directory structure above, what is the command to create a text file animal.txt in one command line.",
+    "options": [
+      "c:\\>copy con meat animal.txt",
+      "c:\\>copy con meat\\animal.txt",
+      "c:\\dos>copy con meat\\animal.txt",
+      "c:\\dos>copy con meat animal.txt"
+    ],
+    "correctAnswer": "c:\\>copy con meat\\animal.txt",
+    "explanation": ""
+  },
+  {
+    "id": 10,
+    "question": "IT is a program is a sequence of extremely simple instructions in binary which are not easy to understand.",
+    "options": [
+      "Machine Language",
+      "High Level Language",
+      "Assembly Language",
+      "Programming Language"
+    ],
+    "correctAnswer": "Machine Language",
+    "explanation": ""
+  },
+  {
+    "id": 11,
+    "question": "It is the signal sent by the CPU to the Main Memory to store data.",
+    "options": [
+      "Read",
+      "Fetch",
+      "Memory Function Complete (MFC)",
+      "Write"
+    ],
+    "correctAnswer": "Write",
+    "explanation": ""
+  },
+  {
+    "id": 12,
+    "question": "It is the register used to indicate the number of loops in assembly language.",
+    "options": [
+      "CX",
+      "DX"
+    ],
+    "correctAnswer": "CX",
+    "explanation": ""
+  },
+  {
+    "id": 13,
+    "question": "It is a control transfer instructions that may or may not transfer control depending on the state of the status flags at the time the instruction is executed.",
+    "options": [
+      "CMC",
+      "Jcc",
+      "POPF",
+      "JMP"
+    ],
+    "correctAnswer": "Jcc",
+    "explanation": ""
+  },
+  {
+    "id": 14,
+    "question": "It is the hexadecimal value of (capital letter) J.",
+    "options": [
+      "4B",
+      "48",
+      "49",
+      "4A"
+    ],
+    "correctAnswer": "4A",
+    "explanation": ""
+  },
+  {
+    "id": 15,
+    "question": "It is a component of a computer system that stores data and program instrcutions.",
+    "options": [
+      "Sofware",
+      "Peopleware",
+      "Memory",
+      "Hardware"
+    ],
+    "correctAnswer": "Memory",
+    "explanation": ""
+  },
+  {
+    "id": 16,
+    "question": "Given the directory structure above, in one command line from the root directory, write a command to create the subdirectory vitc inside meat subdirecotry.",
+    "options": [
+      "c:\\dos>md \\meat vitc",
+      "c:\\>md \\meat vitc",
+      "c:\\>md \\meat\\vitc",
+      "c:\\dos>md \\meat\\vitc"
+    ],
+    "correctAnswer": "c:\\>md \\meat\\vitc",
+    "explanation": ""
+  },
+  {
+    "id": 17,
+    "question": "It is an instruction in assembly language that allows the programmer to skip sections of a program and branch to any part of the memory for the next instruction.",
+    "options": [
+      "ret",
+      "call",
+      "cmp",
+      "jmp"
+    ],
+    "correctAnswer": "jmp",
+    "explanation": ""
+  },
+  {
+    "id": 18,
+    "question": "It is the hexadecimal value of decimal number 5.",
+    "options": [
+      "65",
+      "45",
+      "35",
+      "55"
+    ],
+    "correctAnswer": "35",
+    "explanation": ""
+  },
+  {
+    "id": 19,
+    "question": "It is a special DOS command that provides a single-step mode, which allows you to execute a program one instruction at a time, so that you can view the effect of each instruction on memory locations and registers.",
+    "options": [
+      "PILOT",
+      "TLINK",
+      "TASM",
+      "DEBUG"
+    ],
+    "correctAnswer": "DEBUG",
+    "explanation": ""
+  },
+  {
+    "id": 20,
+    "question": "It is a type of memory which can be read or changed by the user or computer. Memory",
+    "options": [
+      "Erasable Programmable Read Only",
+      "Programmable Read Only Memory",
+      "Read Only Memory",
+      "Random Access Memory"
+    ],
+    "correctAnswer": "Random Access Memory",
+    "explanation": ""
+  },
+  {
+    "id": 21,
+    "question": "It is one of the tangible parts of a computer system.",
+    "options": [
+      "CPU",
+      "Graphical User Interface",
+      "Operating System",
+      "Application Swoftware"
+    ],
+    "correctAnswer": "CPU",
+    "explanation": ""
+  },
+  {
+    "id": 22,
+    "question": "It is an instruction in assembly language which is same as JMP instruction but JMP is only taken if the condition is TRUE.",
+    "options": [
+      "String manipulation",
+      "combinational jmp",
+      "character input",
+      "conditional jmp"
+    ],
+    "correctAnswer": "conditional jmp",
+    "explanation": ""
+  },
+  {
+    "id": 23,
+    "question": "The JMP (Conditional Jump) instructions are jumps that may or may not transfer control depending on the state of the status flags at the time the instruction is executed.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "FALSE",
+    "explanation": ""
+  },
+  {
+    "id": 24,
+    "question": "The Jcc (Conditional Jump) instructions are jumps that may or may not transfer control depending on the state of the status flags at the time the instruction is executed.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 25,
+    "question": "It is a programming language that uses easy-to-remember commands or mnemonics in place of binary patterns in order to make the task of programming easier",
+    "options": [
+      "Programming Language",
+      "Machine Language",
+      "High Level Language",
+      "assembly language"
+    ],
+    "correctAnswer": "assembly language",
+    "explanation": ""
+  },
+  {
+    "id": 26,
+    "question": "Perform the operation of the given binary numbers. 0110 0010 1010 00002 - 1001 1101 0110 00002 1100 0101 0100 00002 What is the value of CF?",
+    "options": [
+      "x",
+      "undefined",
+      "1",
+      "0"
+    ],
+    "correctAnswer": "1",
+    "explanation": ""
+  },
+  {
+    "id": 27,
+    "question": "Perform the operation of the given binary numbers. 0110 0010 1010 00002 - 1001 1101 0110 00002 1100 0101 0100 00002 What is the value of OF?",
+    "options": [
+      "x",
+      "undefined",
+      "1",
+      "0"
+    ],
+    "correctAnswer": "1",
+    "explanation": ""
+  },
+  {
+    "id": 28,
+    "question": "Perform the operation of the given binary numbers. 0110 0010 1010 00002 - 1001 1101 0110 00002 1100 0101 0100 00002 What is the value of AF?",
+    "options": [
+      "x",
+      "undefined",
+      "1",
+      "0"
+    ],
+    "correctAnswer": "0",
+    "explanation": ""
+  },
+  {
+    "id": 29,
+    "question": "Perform the operation of the given binary numbers. 0110 0010 1010 00002 - 1001 1101 0110 00002 1100 0101 0100 00002 What is the value of PF?",
+    "options": [
+      "x",
+      "undefined",
+      "1",
+      "0"
+    ],
+    "correctAnswer": "0",
+    "explanation": ""
+  },
+  {
+    "id": 30,
+    "question": "Perform the operation of the given binary numbers. 0110 0010 1010 00002 - 1001 1101 0110 00002 1100 0101 0100 00002 What is the value of ZF?",
+    "options": [
+      "x",
+      "undefined",
+      "1",
+      "0"
+    ],
+    "correctAnswer": "0",
+    "explanation": ""
+  },
+  {
+    "id": 31,
+    "question": "Using the computer hardware in an efficient manner is one of the goals of OS",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 32,
+    "question": "Kernel acts like bridge between the communication of applications and computer hardware.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 33,
+    "question": "_________ is a defense of the system against internal and external attacks.",
+    "options": [
+      "Protection",
+      "Partition",
+      "Security",
+      "None of the Choices"
+    ],
+    "correctAnswer": "Security",
+    "explanation": ""
+  },
+  {
+    "id": 34,
+    "question": "Convert the following binary number to octal. 010 111 100",
+    "options": [
+      "274",
+      "174",
+      "172",
+      "272"
+    ],
+    "correctAnswer": "274",
+    "explanation": ""
+  },
+  {
+    "id": 35,
+    "question": "Convert decimal 213 to binary.",
+    "options": [
+      "1111001",
+      "11010101"
+    ],
+    "correctAnswer": "11010101",
+    "explanation": ""
+  },
+  {
+    "id": 36,
+    "question": "How many binary digits are required to count to 10010?",
+    "options": [
+      "7",
+      "100",
+      "2",
+      "3"
+    ],
+    "correctAnswer": "7",
+    "explanation": ""
+  },
+  {
+    "id": 37,
+    "question": "Convert the binary number 1100 to Gray code.",
+    "options": [
+      "1010",
+      "100",
+      "11",
+      "1001"
+    ],
+    "correctAnswer": "1010",
+    "explanation": ""
+  },
+  {
+    "id": 38,
+    "question": "Convert the following decimal number to BCD. 469",
+    "options": [
+      "1000 0110 1001",
+      "1001 0110 0100",
+      "0100 0110 1001",
+      "1001 0110 1000"
+    ],
+    "correctAnswer": "0100 0110 1001",
+    "explanation": ""
+  },
+  {
+    "id": 39,
+    "question": "Convert the following decimal number to BCD. 127",
+    "options": [
+      "111010001",
+      "1010111",
+      "11100100001",
+      "100100111"
+    ],
+    "correctAnswer": "100100111",
+    "explanation": ""
+  },
+  {
+    "id": 40,
+    "question": "The sum of 1111 + 1111 in binary equals",
+    "options": [
+      "2222",
+      "11111",
+      "0",
+      "11110"
+    ],
+    "correctAnswer": "11110",
+    "explanation": ""
+  },
+  {
+    "id": 41,
+    "question": "3 × 10^1 + 7 × 10^0 is equal to ________.",
+    "options": [
+      "37",
+      "3.7",
+      "370",
+      "10"
+    ],
+    "correctAnswer": "37",
+    "explanation": ""
+  },
+  {
+    "id": 42,
+    "question": "The difference of 1000 − 100 equals",
+    "options": [
+      "100",
+      "110"
+    ],
+    "correctAnswer": "100",
+    "explanation": ""
+  },
+  {
+    "id": 43,
+    "question": "Most computers follow the _________________ Architecture.",
+    "options": [
+      "Multiprocessor",
+      "Von Neu mann",
+      "Pascal",
+      "Process Array"
+    ],
+    "correctAnswer": "Von Neu mann",
+    "explanation": ""
+  },
+  {
+    "id": 44,
+    "question": "It is a programming languages that were developed because of the difficulty of programming using assembly languages and is easier to use than machine and assembly languages because their commands are closer to natural human language.",
+    "options": [
+      "Assembly",
+      "High Level",
+      "Love level",
+      "Machine"
+    ],
+    "correctAnswer": "High Level",
+    "explanation": ""
+  },
+  {
+    "id": 45,
+    "question": "The JMP (Unconditional Jump) instruction unconditionally transfers control to the target location.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 46,
+    "question": "you can only use rd command only if the subdirectory is empty.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 47,
+    "question": "It is program that run the computer, designed to perform a particular type of task.",
+    "options": [
+      "Application Software",
+      "Operating System",
+      "Programming language",
+      "Software"
+    ],
+    "correctAnswer": "Software",
+    "explanation": ""
+  },
+  {
+    "id": 48,
+    "question": "It is an instruction in assembly language that is used to compare two numeric data fields, one or both of which are contained in a register",
+    "options": [
+      "call",
+      "jmp",
+      "ret",
+      "cmp"
+    ],
+    "correctAnswer": "cmp",
+    "explanation": ""
+  },
+  {
+    "id": 49,
+    "question": "Which of the following is considered as an input device",
+    "options": [
+      "Scanner",
+      "Speaker",
+      "Printer",
+      "Monitor"
+    ],
+    "correctAnswer": "Scanner",
+    "explanation": ""
+  },
+  {
+    "id": 50,
+    "question": "User can use computer even without an operating system.",
+    "options": [
+      "TRUE",
+      "FALSE"
+    ],
+    "correctAnswer": "FALSE",
+    "explanation": ""
+  },
+  {
+    "id": 51,
+    "question": "It is a type of operating system which is built exclusively for a mobile device.",
+    "options": [
+      "None of the choices",
+      "Personal Computer",
+      "Client Computers",
+      "Handheld"
+    ],
+    "correctAnswer": "Handheld",
+    "explanation": ""
+  },
+  {
+    "id": 52,
+    "question": "Convert binary 111111110010 to hexadecimal.",
+    "options": [
+      "EE2",
+      "FD2",
+      "2FE",
+      "FF2"
+    ],
+    "correctAnswer": "FF2",
+    "explanation": ""
+  },
+  {
+    "id": 53,
+    "question": "Convert the following binary number to decimal. 010112",
+    "options": [
+      "10",
+      "35",
+      "15",
+      "11"
+    ],
+    "correctAnswer": "11",
+    "explanation": ""
+  },
+  {
+    "id": 54,
+    "question": "How many binary digits are required to count to 100?",
+    "options": [
+      "7",
+      "3",
+      "100",
+      "2"
+    ],
+    "correctAnswer": "7",
+    "explanation": ""
+  },
+  {
+    "id": 55,
+    "question": "One hex digit is sometimes referred to as a(n):",
+    "options": [
+      "byte",
+      "grouping",
+      "nibble",
+      "instruction"
+    ],
+    "correctAnswer": "nibble",
+    "explanation": ""
+  },
+  {
+    "id": 56,
+    "question": "The binary-coded decimal (BCD) system can be used to represent each of the 10 decimal digits as a(n):",
+    "options": [
+      "4-bit binary code",
+      "8-bit binary code"
+    ],
+    "correctAnswer": "4-bit binary code",
+    "explanation": ""
+  },
+  {
+    "id": 57,
+    "question": "When using the repeated division by 2 method of converting from decimal to binary, one must write the first remainder as the: of remainders are written in descending order until the final remainder is achieved used to replace the original LSB, which is then moved to the MSB position.",
+    "options": [
+      "LSB",
+      "LSB, provided the final remainder is",
+      "MSB, provided the following sequence",
+      "MSB"
+    ],
+    "correctAnswer": "LSB",
+    "explanation": ""
+  },
+  {
+    "id": 58,
+    "question": "The base of the hexadecimal system is:",
+    "options": [
+      "two",
+      "eight",
+      "ten",
+      "sixteen"
+    ],
+    "correctAnswer": "sixteen",
+    "explanation": ""
+  },
+  {
+    "id": 59,
+    "question": "Convert 527(16) to binary.",
+    "options": [
+      "0011 0100 0111",
+      "0101 0010 0111"
+    ],
+    "correctAnswer": "0101 0010 0111",
+    "explanation": ""
+  },
+  {
+    "id": 60,
+    "question": "Simulate the given program below: 0123:0100 mov ah,02 0123:0102 mov dl,50 0123:0104 int 21 0123:0106 int 20 What is the output?",
+    "options": [
+      "P",
+      "p"
+    ],
+    "correctAnswer": "P",
+    "explanation": ""
+  },
+  {
+    "id": 61,
+    "question": "0123:0100 mov dl,32 0123:0102 int 21 0123:0104 mov dl,30 o 0123:0108 int 21 0123:010A mov dl,32 0123:010C int 21 0123:010E mov dl,30 0123:0110 int 21 0123:0112 int 20",
+    "options": [
+      "error",
+      "no output",
+      "2020",
+      "3232"
+    ],
+    "correctAnswer": "no output",
+    "explanation": ""
+  },
+  {
+    "id": 62,
+    "question": "Which is of the following not an example of system software?",
+    "options": [
+      "Solaris",
+      "Linux",
+      "MS word",
+      "Windows 10"
+    ],
+    "correctAnswer": "MS word",
+    "explanation": ""
+  },
+  {
+    "id": 63,
+    "question": "One role of the operating system should be able to detect _____ within the computer system and take the appropriate action.",
+    "options": [
+      "errors",
+      "vulnerability",
+      "none of the choices"
+    ],
+    "correctAnswer": "errors",
+    "explanation": ""
+  },
+  {
+    "id": 64,
+    "question": "In program execution, the OS must have the capability to load a program into ________ and execute that program.",
+    "options": [
+      "disk",
+      "driver",
+      "none of the choices",
+      "memory"
+    ],
+    "correctAnswer": "memory",
+    "explanation": ""
+  },
+  {
+    "id": 65,
+    "question": "Convert hexadecimal value 16 to decimal.",
+    "options": [
+      "16",
+      "22",
+      "20",
+      "10"
+    ],
+    "correctAnswer": "22",
+    "explanation": ""
+  },
+  {
+    "id": 66,
+    "question": "Convert the following binary number to decimal. 10011010",
+    "options": [
+      "157",
+      "153",
+      "154",
+      "155"
+    ],
+    "correctAnswer": "154",
+    "explanation": ""
+  },
+  {
+    "id": 67,
+    "question": "How many bits are in an ASCII character?",
+    "options": [
+      "8",
+      "16",
+      "4",
+      "7"
+    ],
+    "correctAnswer": "7",
+    "explanation": ""
+  },
+  {
+    "id": 68,
+    "question": "Convert the following decimal number to BCD. 469",
+    "options": [
+      "0100 0110 1001",
+      "1001 0110 0100",
+      "1001 0110 1000",
+      "1000 0110 1001"
+    ],
+    "correctAnswer": "0100 0110 1001",
+    "explanation": ""
+  },
+  {
+    "id": 69,
+    "question": "The difference of 111 – 001 equals ________.",
+    "options": [
+      "110",
+      "100",
+      "1",
+      "111"
+    ],
+    "correctAnswer": "110",
+    "explanation": ""
+  },
+  {
+    "id": 70,
+    "question": "Operating system controls and ______ the use of the hardware among the various application programs for the various users.",
+    "options": [
+      "manage",
+      "coordinates",
+      "checks",
+      "monitors"
+    ],
+    "correctAnswer": "coordinates",
+    "explanation": ""
+  },
+  {
+    "id": 71,
+    "question": "Convert 8B3F (16) to binary.",
+    "options": [
+      "1000 1011 0011 1111",
+      "01 1010"
+    ],
+    "correctAnswer": "1000 1011 0011 1111",
+    "explanation": ""
+  },
+  {
+    "id": 72,
+    "question": "A software that controls and coordinates the use of the hardware among the various application programs for the various users.",
+    "options": [
+      "None of the choices",
+      "Operating system",
+      "Bios program",
+      "Tanya Chinita"
+    ],
+    "correctAnswer": "Operating system",
+    "explanation": ""
+  },
+  {
+    "id": 73,
+    "question": "The decimal number for octal 74(8) is ________.",
+    "options": [
+      "60",
+      "62",
+      "22",
+      "74"
+    ],
+    "correctAnswer": "60",
+    "explanation": ""
+  },
+  {
+    "id": 74,
+    "question": "The binary number for octal 45(8) is ________.",
+    "options": [
+      "100100",
+      "100101",
+      "100010",
+      "110101"
+    ],
+    "correctAnswer": "100101",
+    "explanation": ""
+  },
+  {
+    "id": 75,
+    "question": "Convert hexadecimal value C1 to binary.",
+    "options": [
+      "111000100",
+      "11000001",
+      "111000001",
+      "1000111"
+    ],
+    "correctAnswer": "11000001",
+    "explanation": ""
+  },
+  {
+    "id": 76,
+    "question": "What is the difference between binary coding and binary-coded decimal?",
+    "options": [
+      "BCD is pure binary.",
+      "Binary coding has a decimal format.",
+      "Binary coding is pure binary.",
+      "BCD has no decimal format."
+    ],
+    "correctAnswer": "BCD is pure binary.",
+    "explanation": ""
+  },
+  {
+    "id": 77,
+    "question": "Assign the proper odd parity bit to the code 111001",
+    "options": [
+      "1111001",
+      "111111",
+      "11111"
+    ],
+    "correctAnswer": "1111001",
+    "explanation": ""
+  },
+  {
+    "id": 78,
+    "question": "Convert the Gray code 1011 to binary.",
+    "options": [
+      "1011",
+      "1101",
+      "1010",
+      "100"
+    ],
+    "correctAnswer": "1101",
+    "explanation": ""
+  },
+  {
+    "id": 79,
+    "question": "Convert 527(8) to binary.",
+    "options": [
+      "11100111",
+      "111010101",
+      "343",
+      "101010111"
+    ],
+    "correctAnswer": "101010111",
+    "explanation": ""
+  },
+  {
+    "id": 80,
+    "question": "It is a part of an OS, or device that allows a user to enter and receive information.",
+    "options": [
+      "User Interface",
+      "User log-in",
+      "User Experience",
+      "Totoy Bibo"
+    ],
+    "correctAnswer": "User Interface",
+    "explanation": ""
+  },
+  {
+    "id": 81,
+    "question": "Convert the following octal number to decimal 17",
+    "options": [
+      "82",
+      "57",
+      "51",
+      "15"
+    ],
+    "correctAnswer": "15",
+    "explanation": ""
+  },
+  {
+    "id": 82,
+    "question": "Convert 59.7210 to BCD",
+    "options": [
+      "101100101110010",
+      "1011001.011",
+      "111011",
+      "1110.11"
+    ],
+    "correctAnswer": "1011001.011",
+    "explanation": ""
+  },
+  {
+    "id": 83,
+    "question": "This refers to CPU, memory, and I/O devices.",
+    "options": [
+      "software",
+      "peripherals",
+      "hardware",
+      "utility"
+    ],
+    "correctAnswer": "hardware",
+    "explanation": ""
+  },
+  {
+    "id": 84,
+    "question": "This type of operating system runs on a server and provides the server the capability to manage data, users, groups, security, applications, and other networking functions.",
+    "options": [
+      "None of the Choices",
+      "Realtime",
+      "Distributed",
+      "Network"
+    ],
+    "correctAnswer": "Network",
+    "explanation": ""
+  },
+  {
+    "id": 85,
+    "question": "A binary number's value changes most drastically when the ________ is changed.",
+    "options": [
+      "frequency",
+      "MSB",
+      "LSB",
+      "duty cycle"
+    ],
+    "correctAnswer": "MSB",
+    "explanation": ""
+  },
+  {
+    "id": 86,
+    "question": "Convert the following binary number to octal. 001101011(2)",
+    "options": [
+      "153",
+      "351",
+      "352",
+      "253"
+    ],
+    "correctAnswer": "153",
+    "explanation": ""
+  },
+  {
+    "id": 87,
+    "question": "When using even parity, where is the parity bit placed?",
+    "options": [
+      "In the parity word",
+      "After the LSB",
+      "Before the MSB",
+      "After the odd parity bit"
+    ],
+    "correctAnswer": "Before the MSB",
+    "explanation": ""
+  },
+  {
+    "id": 88,
+    "question": "The BCD number for decimal 347 is ________.",
+    "options": [
+      "0011 0100 0111",
+      "1100 1011 0110",
+      "0011 0100 0001",
+      "1100 1011 1000"
+    ],
+    "correctAnswer": "0011 0100 0111",
+    "explanation": ""
+  },
+  {
+    "id": 89,
+    "question": "The sum of the two BCD numbers, 0011 + 0011, is ________.",
+    "options": [
+      "110",
+      "111",
+      "1100",
+      "11"
+    ],
+    "correctAnswer": "110",
+    "explanation": ""
+  },
+  {
+    "id": 90,
+    "question": "A decimal 11 in BCD is ________.",
+    "options": [
+      "10001",
+      "10010"
+    ],
+    "correctAnswer": "10001",
+    "explanation": ""
+  },
+  {
+    "id": 91,
+    "question": "What is the resultant binary of the decimal problem 49 + 01 = ?",
+    "options": [
+      "1010101",
+      "110101",
+      "110010",
+      "110001"
+    ],
+    "correctAnswer": "110010",
+    "explanation": ""
+  },
+  {
+    "id": 92,
+    "question": "Computer user is considered one of the components of computer system Kernel acts like bridge between the communication of applications and computer hardware.",
+    "options": [
+      "FALSE",
+      "True"
+    ],
+    "correctAnswer": "True",
+    "explanation": ""
+  },
+  {
+    "id": 93,
+    "question": "3428 is the decimal value for which of the following binary-coded decimal (BCD) groupings?",
+    "options": [
+      "11010001001000",
+      "110100001101010",
+      "11010010000010",
+      "11010000101000"
+    ],
+    "correctAnswer": "11010000101000",
+    "explanation": ""
+  },
+  {
+    "id": 94,
+    "question": "The sum of 11101 + 10111 equals ________.",
+    "options": [
+      "100100",
+      "110011",
+      "110100",
+      "100001"
+    ],
+    "correctAnswer": "110100",
+    "explanation": ""
+  },
+  {
+    "id": 95,
+    "question": "This refers to computing on handheld smartphones and tablet computers.",
+    "options": [
+      "Cloud",
+      "None of the Choices",
+      "Desktop",
+      "Mobile"
+    ],
+    "correctAnswer": "Mobile",
+    "explanation": ""
+  },
+  {
+    "id": 96,
+    "question": "Kernel is the first program that loads after the bootloader.",
+    "options": [
+      "FALSE",
+      "TRUE"
+    ],
+    "correctAnswer": "TRUE",
+    "explanation": ""
+  },
+  {
+    "id": 97,
+    "question": "It is a program that acts as an interface or intermediary between the computer user and computer hardware.",
+    "options": [
+      "Application Software",
+      "BIOS",
+      "Operating System",
+      "Driver"
+    ],
+    "correctAnswer": "Operating System",
+    "explanation": ""
+  },
+  {
+    "id": 98,
+    "question": "Convert the binary number 1001.00102 to decimal.",
+    "options": [
+      "90.125",
+      "9.125",
+      "125",
+      "12.5"
+    ],
+    "correctAnswer": "9.125",
+    "explanation": ""
+  },
+  {
+    "id": 99,
+    "question": "Convert binary 01001110 to decimal.",
+    "options": [
+      "4E",
+      "78"
+    ],
+    "correctAnswer": "78",
+    "explanation": ""
+  },
+  {
+    "id": 100,
+    "question": "Convert the following decimal number to 8-bit binary. 187",
+    "options": [
+      "1011 1011",
+      "1101 1101",
+      "1011 1101",
+      "1011 1100"
+    ],
+    "correctAnswer": "1011 1011",
+    "explanation": ""
+  },
+  {
+    "id": 101,
+    "question": "The decimal number 188 is equal to the binary number ________.",
+    "options": [
+      "1011 1100",
+      "011 1000"
+    ],
+    "correctAnswer": "1011 1100",
+    "explanation": ""
+  },
+  {
+    "id": 102,
+    "question": "Convert 59.7210 to BCD.",
+    "options": [
+      "101100101110010",
+      "1011001.011"
+    ],
+    "correctAnswer": "1011001.011",
+    "explanation": ""
+  },
+  {
+    "id": 103,
+    "question": "Convert decimal 64 to binary.",
+    "options": [
+      "1001000",
+      "100000",
+      "110110",
+      "0100 0000"
+    ],
+    "correctAnswer": "0100 0000",
+    "explanation": ""
+  },
+  {
+    "id": 104,
+    "question": "It is a non-interactive user interface, where the user specifies all the details of the batch job in advance to batch processing, and receives the output when all the processing is done.",
+    "options": [
+      "Command Line",
+      "Batch-Based",
+      "GUI",
+      "None of the Choices"
+    ],
+    "correctAnswer": "Batch-Based",
+    "explanation": ""
+  },
+  {
+    "id": 105,
+    "question": "Assign the proper odd parity bit to the code 111001.",
+    "options": [
+      "1111001",
+      "1111011",
+      "11111",
+      "111111"
+    ],
+    "correctAnswer": "1111001",
+    "explanation": ""
+  }
+]

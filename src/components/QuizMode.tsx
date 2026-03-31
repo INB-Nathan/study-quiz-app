@@ -16,13 +16,16 @@ interface Question {
   options: { [key: string]: string };
   correctAnswer: string;
   explanation: string;
+  answerText?: string;
 }
 
 interface QuizModeProps {
   questions: Question[];
+  skipApiValidation?: boolean;
+  localCorrectAnswer?: string;
 }
 
-export default function QuizMode({ questions }: QuizModeProps) {
+export default function QuizMode({ questions, skipApiValidation = false }: QuizModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
@@ -82,6 +85,42 @@ export default function QuizMode({ questions }: QuizModeProps) {
     // Immediate feedback — user sees button highlight instantly
     setSelectedAnswer(answer);
     setAnswered(true);
+
+    if (skipApiValidation) {
+      // CSPT: client-side grading
+      const isCorrect = answer === currentQuestion.correctAnswer;
+      const feedbackData = {
+        correct: isCorrect,
+        explanation: currentQuestion.explanation || '',
+        correctAnswer: isReviewMode ? currentQuestion.correctAnswer : undefined,
+      };
+      setFeedback(feedbackData);
+      if (isCorrect) {
+        setScore((s) => s + 1);
+        setSessionScore((s) => s + 1);
+        removeWrongAnswer(currentQuestion.id);
+      } else {
+        if (!isReviewMode) {
+          addWrongAnswer({
+            questionId: currentQuestion.id,
+            topic: currentQuestion.topic,
+            question: currentQuestion.question,
+            selectedAnswer: answer,
+            correctAnswer: currentQuestion.answerText ?? currentQuestion.correctAnswer,
+            explanation: currentQuestion.explanation || '',
+            timestamp: Date.now(),
+          });
+        }
+      }
+      const prog = getProgress();
+      if (!prog.completedQuestions.includes(String(currentQuestion.id))) {
+        saveProgress({
+          completedQuestions: [...prog.completedQuestions, String(currentQuestion.id)],
+          scoresByTopic: { ...prog.scoresByTopic, [currentQuestion.topic]: score + (isCorrect ? 1 : 0) },
+        });
+      }
+      return;
+    }
 
     // Fire-and-forget API call — only updates feedback state
     fetch(`/api/quiz?review=${isReviewMode}`, {

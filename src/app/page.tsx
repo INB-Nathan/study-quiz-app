@@ -8,6 +8,7 @@ import ScoreBoard from '@/components/ScoreBoard';
 import { getLastSession, clearLastSession, getStreak, getStreaks } from '@/lib/storage';
 
 type View = 'quiz' | 'flashcards' | 'mistakes' | 'scores';
+type Subject = 'system' | 'cspt';
 
 interface Question {
   id: number;
@@ -16,10 +17,32 @@ interface Question {
   options: { [key: string]: string };
   correctAnswer: string;
   explanation: string;
+  answerText?: string; // CSPT: original text answer before normalization
 }
 
 const TOPICS = ['System Integ SA1', 'System Integ SA2', 'System Integ SA3', 'System Integ SA4'];
 const TOPIC_STORAGE_KEY = 'study_selected_topic';
+const SUBJECT_STORAGE_KEY = 'study_selected_subject';
+
+function normalizeCSPTQuestion(q: { id: number; question: string; options: string[]; correctAnswer: string; explanation: string }): Question {
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const normalizedOptions: { [key: string]: string } = {};
+  q.options.forEach((opt, i) => {
+    if (opt !== undefined && letters[i]) {
+      normalizedOptions[letters[i]] = opt;
+    }
+  });
+  const correctLetter = letters[q.options.findIndex((opt) => opt === q.correctAnswer)];
+  return {
+    id: q.id,
+    topic: 'CSPT',
+    question: q.question,
+    options: normalizedOptions,
+    correctAnswer: correctLetter ?? 'A',
+    explanation: q.explanation,
+    answerText: q.correctAnswer,
+  };
+}
 
 export default function Home() {
   const [view, setView] = useState<View>('quiz');
@@ -28,22 +51,32 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [csptQuestions, setCsptQuestions] = useState<Question[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
+  const [selectedSubject, setSelectedSubject] = useState<Subject>('system');
   const [lastSession, setLastSession] = useState<{ questionId: number; topic: string } | null>(null);
   const [streaks, setStreaks] = useState<Record<string, number>>({});
 
-  // Hydrate selectedTopic from localStorage (client-only)
+  // Hydrate selectedTopic and selectedSubject from localStorage (client-only)
   useEffect(() => {
-    const stored = localStorage.getItem(TOPIC_STORAGE_KEY);
-    if (stored && (stored === 'All' || TOPICS.includes(stored))) {
-      setSelectedTopic(stored);
+    const storedTopic = localStorage.getItem(TOPIC_STORAGE_KEY);
+    if (storedTopic && (storedTopic === 'All' || TOPICS.includes(storedTopic))) {
+      setSelectedTopic(storedTopic);
+    }
+    const storedSubject = localStorage.getItem(SUBJECT_STORAGE_KEY);
+    if (storedSubject === 'cspt' || storedSubject === 'system') {
+      setSelectedSubject(storedSubject);
     }
   }, []);
 
-  // Persist selectedTopic to localStorage
+  // Persist selectedTopic and selectedSubject to localStorage
   useEffect(() => {
     localStorage.setItem(TOPIC_STORAGE_KEY, selectedTopic);
   }, [selectedTopic]);
+
+  useEffect(() => {
+    localStorage.setItem(SUBJECT_STORAGE_KEY, selectedSubject);
+  }, [selectedSubject]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem('study_access_key');
@@ -52,6 +85,14 @@ export default function Home() {
     fetch('/questions.json')
       .then((r) => r.json())
       .then((data) => setQuestions(data))
+      .catch(() => {});
+
+    fetch('/cspt-quiz.json')
+      .then((r) => r.json())
+      .then((data: { id: number; question: string; options: string[]; correctAnswer: string; explanation: string }[]) => {
+        console.log('[CSPT] Dataset loaded, question count:', data.length);
+        setCsptQuestions(data.map(normalizeCSPTQuestion));
+      })
       .catch(() => {});
 
     const ls = getLastSession();
@@ -87,13 +128,18 @@ export default function Home() {
     }
   };
 
+  const activeQuestions = selectedSubject === 'cspt' ? csptQuestions : questions;
   const filteredQuestions =
-    selectedTopic === 'All' ? questions : questions.filter((q) => q.topic === selectedTopic);
+    selectedSubject === 'cspt'
+      ? activeQuestions
+      : selectedTopic === 'All'
+      ? questions
+      : questions.filter((q) => q.topic === selectedTopic);
 
   const resumeQuestionIndex =
-    lastSession && selectedTopic !== 'All'
+    lastSession && selectedTopic !== 'All' && selectedSubject !== 'cspt'
       ? questions.findIndex((q) => q.id === lastSession.questionId && q.topic === selectedTopic)
-      : lastSession
+      : lastSession && selectedSubject !== 'cspt'
       ? questions.findIndex((q) => q.id === lastSession.questionId)
       : -1;
 
@@ -180,24 +226,62 @@ export default function Home() {
         </div>
       )}
 
-      {/* Topic tabs — global filter */}
+      {/* Subject selector — Master Tab */}
       <div className="border-b border-[#2a2a2a] px-2 py-2 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2 min-w-max">
-          {['All', ...TOPICS].map((topic) => (
-            <button
-              key={topic}
-              onClick={() => setSelectedTopic(topic)}
-              className={`min-h-12 px-6 rounded-xl font-medium text-sm active:scale-95 transition-all ${
-                selectedTopic === topic
-                  ? 'bg-[#22d3ee] text-[#0f0f0f]'
-                  : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:border-[#22d3ee]/50'
-              }`}
-            >
-              {tabLabels[topic] ?? topic}
-            </button>
-          ))}
+          <button
+            onClick={() => {
+              console.log('[Subject] Switching to System Integ, CSPT dataset count:', csptQuestions.length);
+              setSelectedSubject('system');
+              setSelectedTopic('All');
+              setView('quiz');
+            }}
+            className={`min-h-12 px-6 rounded-xl font-medium text-sm active:scale-95 transition-all ${
+              selectedSubject === 'system'
+                ? 'bg-[#22d3ee] text-[#0f0f0f]'
+                : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:border-[#22d3ee]/50'
+            }`}
+          >
+            System Integ
+          </button>
+          <button
+            onClick={() => {
+              console.log('[Subject] Switching to CSPT, dataset count:', csptQuestions.length);
+              setSelectedSubject('cspt');
+              setSelectedTopic('All');
+              setView('quiz');
+            }}
+            className={`min-h-12 px-6 rounded-xl font-medium text-sm active:scale-95 transition-all ${
+              selectedSubject === 'cspt'
+                ? 'bg-[#22d3ee] text-[#0f0f0f]'
+                : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:border-[#22d3ee]/50'
+            }`}
+          >
+            CSPT
+          </button>
         </div>
       </div>
+
+      {/* Topic tabs — global filter (only for System Integ) */}
+      {selectedSubject === 'system' && (
+        <div className="border-b border-[#2a2a2a] px-2 py-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            {['All', ...TOPICS].map((topic) => (
+              <button
+                key={topic}
+                onClick={() => setSelectedTopic(topic)}
+                className={`min-h-12 px-6 rounded-xl font-medium text-sm active:scale-95 transition-all ${
+                  selectedTopic === topic
+                    ? 'bg-[#22d3ee] text-[#0f0f0f]'
+                    : 'bg-[#1a1a1a] border border-[#2a2a2a] text-gray-400 hover:border-[#22d3ee]/50'
+                }`}
+              >
+                {tabLabels[topic] ?? topic}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Mode nav */}
       <nav className="flex border-b border-[#2a2a2a]">
@@ -218,7 +302,12 @@ export default function Home() {
 
       {/* Content */}
       <main className="flex-1">
-        {view === 'quiz' && <QuizMode questions={filteredQuestions} />}
+        {view === 'quiz' && (
+          <QuizMode
+            questions={filteredQuestions}
+            skipApiValidation={selectedSubject === 'cspt'}
+          />
+        )}
         {view === 'flashcards' && <FlashcardMode questions={filteredQuestions} />}
         {view === 'mistakes' && <WrongAnswersMode questions={questions} selectedTopic={selectedTopic} />}
         {view === 'scores' && <ScoreBoard questions={filteredQuestions} />}
